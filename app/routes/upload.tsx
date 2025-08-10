@@ -1,4 +1,4 @@
-import React, {type FormEvent, useState} from 'react';
+import React, {type FormEvent, useEffect, useState} from 'react';
 import NavBar from "~/Components/NavBar";
 import FileUploader from "~/Components/FileUploader";
 import {usePuterStore} from "~/lib/puter";
@@ -72,7 +72,9 @@ const Upload = () => {
         await kv.set(`resume:${uuid}`, JSON.stringify(data))
         setStatuesText('Analysing complete redirecting...')
         console.log("Analysis Data:", data)
+        navigate(`/resume/${uuid}`)
     }
+
 
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
