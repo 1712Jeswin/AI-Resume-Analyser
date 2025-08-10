@@ -27,3 +27,7 @@ export function formatSize(bytes: number): string {
   // Show as KB for anything less than 1 MB
   return `${trim(bytes / KB)} KB`;
 }
+
+
+export const generateUUID =()=> crypto.randomUUID();
+

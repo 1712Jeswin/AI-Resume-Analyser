@@ -1,8 +1,16 @@
 import React, {type FormEvent, useState} from 'react';
 import NavBar from "~/Components/NavBar";
 import FileUploader from "~/Components/FileUploader";
+import {usePuterStore} from "~/lib/puter";
+import {useNavigate} from "react-router";
+import {convertPdfToImage} from "~/lib/pdf2img";
+import {generateUUID} from "~/lib/format";
+// @ts-ignore
+import {prepareInstructions} from "../../Constants";
 
 const Upload = () => {
+    const {auth, isLoading, fs, ai, kv} = usePuterStore();
+    const navigate = useNavigate();
     const [isProcessing, setIsProcessing] = useState(false);
     const [statuesText, setStatuesText] = useState("");
     const [file, setFile] = useState<File | null>(null);
@@ -11,18 +19,67 @@ const Upload = () => {
         setFile(file)
     }
 
+    const handleAnalyse = async ({companyName, jobTitle, jobDescription, file}: {
+        companyName: string,
+        jobTitle: string,
+        jobDescription: string,
+        file: File
+    }) => {
+        setIsProcessing(true);
+        setStatuesText("Uploading the file...");
+        const uploadedFile = await fs.upload([file]);
+        if (!uploadedFile) return setStatuesText("Error: Failed to upload File");
+
+        setStatuesText('Converting to image... ')
+        const imageFile = await convertPdfToImage(file);
+        if (!imageFile.file) return setStatuesText("Error: Failed to convert PDF to image...");
+
+        setStatuesText("Uploading the image...");
+        const uploadedImage = await fs.upload([imageFile.file]);
+        if (!uploadedFile) return setStatuesText("Error: Failed to upload Image");
+
+        setStatuesText("Preparing Data")
+
+        const uuid = generateUUID()
+        const data = {
+            id: uuid,
+            resumePath: uploadedFile.path,
+            imagePath: uploadedImage,
+            companyName, jobTitle, jobDescription,
+            feedback: ''
+        }
+        await kv.set(`resume:${uuid}`, JSON.stringify(data))
+        setStatuesText('Analysing...')
+
+        const feedback = await ai.feedback(
+            uploadedFile.path,
+            prepareInstructions({jobTitle, jobDescription})
+        );
+        if (!feedback) return setStatuesText('Failed to Analyse resume');
+
+        const feedbackText = typeof feedback.message.content === 'string'
+            ? feedback.message.content
+            : feedback.message.content[0].text;
+
+        data.feedback = JSON.parse(feedbackText);
+        await kv.set(`resume:${uuid}`, JSON.stringify(data))
+        setStatuesText('Analysing complete redirecting...')
+    }
+
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const form = event.currentTarget.closest("form");
         if (!form) return;
         const formData = new FormData(form);
-        const companyName = formData.get("company-name");
-        const jobTitle = formData.get("job-title");
-        const jobdescription = formData.get("job-description");
-        console.log({
-            companyName,jobTitle,jobdescription,file
-        })
+        const companyName = formData.get("company-name") as string;
+        const jobTitle = formData.get("job-title") as string;
+        const jobDescription = formData.get("job-description") as string;
+
+        if (!file) return
+
+        handleAnalyse({companyName, jobTitle, jobDescription, file})
+
     }
 
     return (
