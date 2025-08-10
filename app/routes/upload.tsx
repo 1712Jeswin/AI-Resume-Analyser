@@ -31,12 +31,19 @@ const Upload = () => {
         if (!uploadedFile) return setStatuesText("Error: Failed to upload File");
 
         setStatuesText('Converting to image... ')
-        const imageFile = await convertPdfToImage(file);
-        if (!imageFile.file) return setStatuesText("Error: Failed to convert PDF to image...");
+        const imageResult = await convertPdfToImage(file);
+        if (imageResult.error) {
+            console.error(imageResult.error);
+            return setStatuesText(imageResult.error);
+        }
+        if (!imageResult.file) {
+            return setStatuesText("Error: No image file produced from PDF.");
+        }
 
         setStatuesText("Uploading the image...");
-        const uploadedImage = await fs.upload([imageFile.file]);
-        if (!uploadedFile) return setStatuesText("Error: Failed to upload Image");
+        const uploadedImage = await fs.upload([imageResult.file]);
+        if (!uploadedImage) return setStatuesText("Error: Failed to upload Image");
+
 
         setStatuesText("Preparing Data")
 
@@ -64,6 +71,7 @@ const Upload = () => {
         data.feedback = JSON.parse(feedbackText);
         await kv.set(`resume:${uuid}`, JSON.stringify(data))
         setStatuesText('Analysing complete redirecting...')
+        console.log("Analysis Data:", data)
     }
 
 

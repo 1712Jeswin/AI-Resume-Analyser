@@ -48,33 +48,36 @@ export async function convertPdfToImage(
         }
 
         await page.render({ canvasContext: context!, viewport }).promise;
+        console.log("Canvas size:", canvas.width, canvas.height);
 
         return new Promise((resolve) => {
             canvas.toBlob(
                 (blob) => {
-                    if (blob) {
-                        // Create a File from the blob with the same name as the pdf
-                        const originalName = file.name.replace(/\.pdf$/i, "");
-                        const imageFile = new File([blob], `${originalName}.png`, {
-                            type: "image/png",
-                        });
-
-                        resolve({
-                            imageUrl: URL.createObjectURL(blob),
-                            file: imageFile,
-                        });
-                    } else {
+                    if (!blob) {
+                        console.error("toBlob returned null");
                         resolve({
                             imageUrl: "",
                             file: null,
-                            error: "Failed to create image blob",
+                            error: "Failed to create image blob (canvas was empty)",
                         });
+                        return;
                     }
+
+                    const originalName = file.name.replace(/\.pdf$/i, "");
+                    const imageFile = new File([blob], `${originalName}.png`, {
+                        type: "image/png",
+                    });
+
+                    resolve({
+                        imageUrl: URL.createObjectURL(blob),
+                        file: imageFile,
+                    });
                 },
                 "image/png",
                 1.0
-            ); // Set quality to maximum (1.0)
+            );
         });
+
     } catch (err) {
         return {
             imageUrl: "",
