@@ -39,19 +39,32 @@ const WipeApp = () => {
     }
 
     return (
-        <div>
-            Authenticated as: {auth.user?.username}
-            <div>Existing files:</div>
-            <div className="flex flex-col gap-4">
-                {files.map((file) => (
-                    <div key={file.id} className="flex flex-row gap-4">
-                        <p>{file.name}</p>
-                    </div>
-                ))}
-            </div>
+        <div className="resumes-section py-10 px-10 absolute top-10 flex flex-col" >
+            <h1 className="text-2xl">Authenticated as: {auth.user?.username}</h1>
+            <h2 className="text-xl">Existing files:</h2>
+            {files.length > 0 ? (
+                <table className="min-w-full border border-gray-300 rounded-md overflow-hidden">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="px-4 py-2 text-left">ID</th>
+                            <th className="px-4 py-2 text-left">Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {files.map((file) => (
+                            <tr key={file.id} className="border-t">
+                                <td className="px-4 py-2">{file.id}</td>
+                                <td className="px-4 py-2">{file.name}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ) : (
+                <div className="text-gray-600">No files found.</div>
+            )}
             <div>
                 <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer"
+                    className=" primary-button text-white text-xl px-10 py-6 rounded-md cursor-pointer"
                     onClick={() => handleDelete()}
                 >
                     Wipe App Data
