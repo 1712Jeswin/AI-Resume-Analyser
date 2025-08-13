@@ -387,7 +387,26 @@ export const usePuterStore = create<PuterStore>((set, get) => {
       setError("Puter.js not available");
       return;
     }
-    return puter.kv.delete(key);
+    const kvAny: any = (puter as any).kv;
+    // Support different KV delete method names across environments
+    const fn = typeof kvAny?.delete === "function"
+      ? kvAny.delete
+      : typeof kvAny?.remove === "function"
+      ? kvAny.remove
+      : typeof kvAny?.del === "function"
+      ? kvAny.del
+      : typeof kvAny?.unset === "function"
+      ? kvAny.unset
+      : typeof kvAny?.rm === "function"
+      ? kvAny.rm
+      : null;
+
+    if (!fn) {
+      console.warn("Puter KV delete method not found. No-op performed for key:", key);
+      // Return undefined to avoid throwing; caller may treat undefined as success in some UIs
+      return;
+    }
+    return fn.call(kvAny, key);
   };
 
   const listKV = async (pattern: string, returnValues?: boolean) => {

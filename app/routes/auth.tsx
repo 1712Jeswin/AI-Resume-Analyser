@@ -11,13 +11,19 @@ export const meta = ()=>([
 const Auth = () => {
     const {isLoading, auth} = usePuterStore();
     const location = useLocation();
-    const next = location.search.split('next=')[1];
     const navigate = useNavigate();
+
+    // Safely parse the `next` param and default to '/' if missing or invalid
+    const search = new URLSearchParams(location.search);
+    const nextParam = search.get('next') || '/';
+    const next = nextParam.startsWith('/') ? nextParam : '/';
+
     useEffect(() => {
         if (auth.isAuthenticated) navigate(next);
-    }, [auth.isAuthenticated, next]);
+    }, [auth.isAuthenticated, next, navigate]);
+
     return (
-        <main className="bg-[url('/images/bg-main.svg')] bg-conver min-h-screen flex items-center justify-center">
+        <main className="bg-[url('/images/bg-main.svg')] bg-cover min-h-screen flex items-center justify-center">
             <div className="gradient-border shadow-lg">
                 <section className="flex flex-col gap-8 bg-white rounded-2xl p-10">
                     <div className="flex flex-col items-center gap-2 text-center">
